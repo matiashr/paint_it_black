@@ -1,0 +1,10 @@
+Makefile;green
+switch;green
+case;green
+<;red
+>;red
+);red
+(;red
+=;yellow
+return;yellow
+reg;black

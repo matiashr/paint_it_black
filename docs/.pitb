@@ -45,3 +45,4 @@ PROGRAM;yellow
 END_PROGRAM;yellow
 NOT;yellow
 THEN;yellow
+\[0-9]*;cyan

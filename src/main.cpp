@@ -8,12 +8,20 @@
 //     for;green
 //     entity; black
 //
+// A pattern starting with '\' is treated as a regular expression instead
+// of a literal keyword; the '\' is dropped and the rest is matched (in
+// full) against each token, e.g.:
+//
+//     \[0-9]+; green     // colorize number tokens
+//     \[A-Z][a-z]*; cyan // colorize Capitalized words
+//
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
 #include <string>
 #include <vector>
+#include <regex>
 
 // Map a human color name to its ANSI SGR escape sequence.
 struct Color {
@@ -42,24 +50,57 @@ static const char* ansi_for(const char* name)
 }
 
 struct Keyword {
-	std::string word;
-	std::string code; // ANSI escape for the color
+	std::string word;     // literal keyword, or regex source when is_regex
+	std::string code;     // ANSI escape for the color
+	bool is_regex;        // match word as a regular expression
+	std::regex re;        // compiled pattern, valid only when is_regex
+
+	Keyword() : is_regex(false) {}
 };
 static std::vector<Keyword> g_keywords;
 
-// Insert or override the color for a keyword.
-static void set_keyword(const std::string& word, const char* code)
+// Find an existing entry with the same pattern and regex-ness.
+static Keyword* find_keyword(const std::string& word, bool is_regex)
 {
 	for (size_t i = 0; i < g_keywords.size(); i++) {
-		if (g_keywords[i].word == word) {
-			g_keywords[i].code = code;
-			return;
-		}
+		if (g_keywords[i].is_regex == is_regex && g_keywords[i].word == word)
+			return &g_keywords[i];
+	}
+	return NULL;
+}
+
+// Insert or override the color for a literal keyword.
+static void set_keyword(const std::string& word, const char* code)
+{
+	if (Keyword* k = find_keyword(word, false)) {
+		k->code = code;
+		return;
 	}
 	Keyword k;
 	k.word = word;
 	k.code = code;
 	g_keywords.push_back(k);
+}
+
+// Insert or override the color for a regular-expression pattern.
+// Returns false (and adds nothing) if the pattern fails to compile.
+static bool set_regex(const std::string& pattern, const char* code)
+{
+	if (Keyword* k = find_keyword(pattern, true)) {
+		k->code = code;
+		return true;
+	}
+	Keyword k;
+	try {
+		k.re = std::regex(pattern);
+	} catch (const std::regex_error&) {
+		return false;
+	}
+	k.word = pattern;
+	k.code = code;
+	k.is_regex = true;
+	g_keywords.push_back(k);
+	return true;
 }
 
 static void load_defaults()
@@ -112,7 +153,17 @@ static void load_config()
 			        color.c_str(), word.c_str());
 			continue;
 		}
-		set_keyword(word, code);
+
+		if (word[0] == '\\') {
+			std::string pattern = word.substr(1);
+			if (pattern.empty())
+				continue;
+			if (!set_regex(pattern, code))
+				fprintf(stderr, "pitb: invalid regex '%s'\n",
+				        pattern.c_str());
+		} else {
+			set_keyword(word, code);
+		}
 	}
 	fclose(f);
 }
@@ -123,8 +174,11 @@ static void colorize(const std::string& word)
 	if (word.empty())
 		return;
 	for (size_t i = 0; i < g_keywords.size(); i++) {
-		if (g_keywords[i].word == word) {
-			printf("%s%s\033[0m", g_keywords[i].code.c_str(), word.c_str());
+		const Keyword& k = g_keywords[i];
+		bool match = k.is_regex ? std::regex_match(word, k.re)
+		                        : (k.word == word);
+		if (match) {
+			printf("%s%s\033[0m", k.code.c_str(), word.c_str());
 			return;
 		}
 	}

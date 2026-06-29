@@ -190,17 +190,28 @@ static bool is_word_char(int c)
 	return isalnum(c) || c == '_';
 }
 
+static int readchar( FILE* fd )
+{
+		return fgetc(fd);
+}
+
 int main(int argc, char* argv[])
 {
-	(void)argc;
-	(void)argv;
-
+	FILE* input=stdin;
+	if( argc > 1 ) {
+		// try reading as filename since argument was provided
+		input = fopen(argv[1],"r");
+		if( input == NULL ) {
+				perror("on file open - ");
+				exit(1);
+		}
+	}
 	load_defaults();
 	load_config();
 
 	std::string word;
 	int c;
-	while ((c = getchar()) != EOF) {
+	while ((c = readchar(input)) != EOF) {
 		if (is_word_char(c)) {
 			word.push_back((char)c);
 		} else {

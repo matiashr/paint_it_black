@@ -15,7 +15,13 @@ protected;yellow
 struct; yellow
 enum; green
 auto;yellow
-
+int; yellow
+bool;yellow
+char;yellow
+const;yellow
+\^\s*#\s*include\s*([<"])([^>"]+)[>"]\s*(?://.*)?$
+\//*$;red
+static;green
 WORD;green
 LREAL;yellow
 TRUE;green

@@ -1,2 +1,12 @@
 def;green
 import;yellow
+for;green
+in;yellow
+from;green
+try;yellow
+except;yellow
+else;blue
+with;yellow
+self;red
+\'*';yellow
+\\"*\"$;yellow

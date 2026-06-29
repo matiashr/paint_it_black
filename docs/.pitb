@@ -20,6 +20,7 @@ bool;yellow
 char;yellow
 const;yellow
 \^\s*#\s*include\s*([<"])([^>"]+)[>"]\s*(?://.*)?$
+\#define*$;red
 \//*$;red
 static;green
 WORD;green
@@ -44,6 +45,9 @@ ELSIF;yellow
 IF;yellow
 OF;yellow
 FUNCTION_BLOCK;green
+Method;green
+EXTENDS;green
+CONSTANT;yellow
 RETURN;yellow
 TYPE;yellow
 END_TYPE;yellow
@@ -52,3 +56,5 @@ END_PROGRAM;yellow
 NOT;yellow
 THEN;yellow
 \[0-9]*;cyan
+def;green
+import;yellow

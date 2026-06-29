@@ -1,0 +1,27 @@
+Makefile;green
+switch;green
+case;green
+<;red
+>;red
+);red
+(;red
+=;yellow
+return;yellow
+reg;black
+class;yellow
+public;green
+private;red
+protected;yellow
+struct; yellow
+enum; green
+auto;yellow
+int; yellow
+bool;yellow
+char;yellow
+const;yellow
+\^\s*#\s*include\s*([<"])([^>"]+)[>"]\s*(?://.*)?$
+\#define*$;red
+\//*$;red
+static;green
+\[0-9]*;cyan
+

@@ -1,28 +1,3 @@
-Makefile;green
-switch;green
-case;green
-<;red
->;red
-);red
-(;red
-=;yellow
-return;yellow
-reg;black
-class;yellow
-public;green
-private;red
-protected;yellow
-struct; yellow
-enum; green
-auto;yellow
-int; yellow
-bool;yellow
-char;yellow
-const;yellow
-\^\s*#\s*include\s*([<"])([^>"]+)[>"]\s*(?://.*)?$
-\#define*$;red
-\//*$;red
-static;green
 WORD;green
 LREAL;yellow
 TRUE;green
@@ -55,6 +30,4 @@ PROGRAM;yellow
 END_PROGRAM;yellow
 NOT;yellow
 THEN;yellow
-\[0-9]*;cyan
-def;green
-import;yellow
+AND;yellow

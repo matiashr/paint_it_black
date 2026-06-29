@@ -1,8 +1,10 @@
 // pitb - paint it black: colorize keywords read from stdin.
 //
 // Keywords default to a hardcoded set, but ~/.pitb (if present) is loaded
-// to add or override keyword -> color mappings. The file format is one
-// "keyword; color" pair per line, e.g.:
+// to add or override keyword -> color mappings. ~/.pitb may be either a
+// single file or a directory: if it is a directory, every regular file
+// inside it is loaded in alphabetical order (later files override earlier
+// ones). The file format is one "keyword; color" pair per line, e.g.:
 //
 //     while; white
 //     for;green
@@ -22,6 +24,9 @@
 #include <string>
 #include <vector>
 #include <regex>
+#include <algorithm>
+#include <sys/stat.h>
+#include <dirent.h>
 
 // Map a human color name to its ANSI SGR escape sequence.
 struct Color {
@@ -120,14 +125,10 @@ static std::string trim(const std::string& s)
 	return s.substr(a, b - a);
 }
 
-// Load ~/.pitb if it exists. Returns silently when absent.
-static void load_config()
+// Parse a single config file, adding/overriding keyword mappings.
+// Returns silently when the file cannot be opened.
+static void load_config_file(const std::string& path)
 {
-	const char* home = getenv("HOME");
-	if (home == NULL)
-		return;
-
-	std::string path = std::string(home) + "/.pitb";
 	FILE* f = fopen(path.c_str(), "r");
 	if (f == NULL)
 		return;
@@ -166,6 +167,50 @@ static void load_config()
 		}
 	}
 	fclose(f);
+}
+
+// Load configuration from ~/.pitb. If it is a directory, every regular
+// file inside is loaded in alphabetical order; otherwise it is treated as
+// a single config file. Returns silently when absent.
+static void load_config()
+{
+	const char* home = getenv("HOME");
+	if (home == NULL)
+		return;
+
+	std::string base = std::string(home) + "/.pitb";
+
+	struct stat st;
+	if (stat(base.c_str(), &st) != 0)
+		return;
+
+	if (!S_ISDIR(st.st_mode)) {
+		load_config_file(base);
+		return;
+	}
+
+	DIR* dir = opendir(base.c_str());
+	if (dir == NULL)
+		return;
+
+	std::vector<std::string> files;
+	struct dirent* ent;
+	while ((ent = readdir(dir)) != NULL) {
+		std::string name = ent->d_name;
+		if (name == "." || name == "..")
+			continue;
+
+		std::string path = base + "/" + name;
+		struct stat est;
+		if (stat(path.c_str(), &est) == 0 && S_ISREG(est.st_mode))
+			files.push_back(path);
+	}
+	closedir(dir);
+
+	// Deterministic, alphabetical load order so overrides are predictable.
+	std::sort(files.begin(), files.end());
+	for (size_t i = 0; i < files.size(); i++)
+		load_config_file(files[i]);
 }
 
 // Print a token, wrapped in color if it is a known keyword.
